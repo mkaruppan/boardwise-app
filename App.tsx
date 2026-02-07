@@ -48,11 +48,15 @@ const App: React.FC = () => {
 
   const handleLogin = (user: User) => {
     if (user.status === 'TERMINATED') {
-      showToast(AlertTriangle, 'Access Denied', 'This account has been archived.', 'bg-red-600');
+      showToast(AlertTriangle, 'Access Denied', 'This account has been archived and access revoked.', 'bg-red-600');
       return;
     }
     if (user.status === 'FROZEN') {
       showToast(Snowflake, 'Account Frozen', 'This profile has been temporarily suspended by the Secretary.', 'bg-cyan-600');
+      return;
+    }
+    if (user.status === 'PENDING_APPROVAL') {
+      showToast(AlertTriangle, 'Pending Approval', 'Your registration is awaiting board approval and final sign-off.', 'bg-orange-600');
       return;
     }
     setCurrentUser(user);
@@ -70,23 +74,24 @@ const App: React.FC = () => {
 
   // --- PASSWORD RESET LOGIC ---
 
-  // 1. Self Service (Login Screen)
   const handleForgotPassword = (email: string) => {
-     // Simulation only
      const target = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
      if (target) {
-         addLog('PWD_RESET_REQ', `Self-service password reset requested for ${target.name}`, target);
+         addLog('PWD_RESET_REQ', `Self-service password reset requested via email.`, target);
          showToast(Mail, 'Link Sent', `Password reset instructions sent to ${email}`, 'bg-blue-600');
      } else {
-         // Security best practice: Don't reveal if email exists, but we simulate it anyway
          showToast(Mail, 'Link Sent', `Password reset instructions sent to ${email}`, 'bg-blue-600');
      }
   };
 
-  // 2. Admin Request (Secretary initiates)
   const handleRequestPasswordReset = (targetUserId: string, reason: string) => {
     if (!currentUser || currentUser.role !== UserRole.SECRETARY) {
         showToast(AlertTriangle, 'Permission Denied', 'Only the Secretary can initiate a manual password reset.', 'bg-red-600');
+        return;
+    }
+
+    if (currentUser.id === targetUserId) {
+        showToast(AlertTriangle, 'Action Restricted', 'Please use the standard self-service reset for your own account.', 'bg-slate-700');
         return;
     }
 
@@ -98,7 +103,7 @@ const App: React.FC = () => {
                     requestedBy: currentUser.id,
                     reason: reason,
                     approvals: [],
-                    newTempPassword: Math.random().toString(36).slice(-8).toUpperCase() // Demo simulation
+                    newTempPassword: Math.random().toString(36).slice(-8).toUpperCase()
                 }
             };
         }
@@ -107,20 +112,26 @@ const App: React.FC = () => {
 
     const targetUser = users.find(u => u.id === targetUserId);
     addLog('PWD_CHANGE_INIT', `Secretary initiated password reset for ${targetUser?.name}. Reason: ${reason}`, currentUser);
-    showToast(Key, 'Request Initiated', 'Password change pending approval from 1 Director.', 'bg-orange-600');
+    showToast(Key, 'Request Initiated', 'Governance workflow active. Requires 1 Director approval.', 'bg-orange-600');
   };
 
-  // 3. Admin Approval (Director approves)
   const handleApprovePasswordReset = (targetUserId: string) => {
       if (!currentUser) return;
       
       const targetUser = users.find(u => u.id === targetUserId);
       if (!targetUser || !targetUser.passwordResetRequest) return;
 
-      // Ensure approver is not the requester (Secretary) - though in this flow, Secretary requests, Director approves.
-      // Basic check: Approver must be a Director (Exec or Non-Exec) or Chair
-      if (currentUser.role === UserRole.SECRETARY && targetUser.passwordResetRequest.requestedBy === currentUser.id) {
-          showToast(AlertTriangle, 'Conflict of Interest', 'You cannot approve your own request.', 'bg-red-600');
+      // Governance Rule: Secretary initiates, Director approves. 
+      // Requesters cannot approve their own requests.
+      if (currentUser.id === targetUser.passwordResetRequest.requestedBy) {
+          showToast(AlertTriangle, 'Conflict of Interest', 'Requesters cannot approve their own governance motions.', 'bg-red-600');
+          return;
+      }
+
+      // Ensure the approver is a Director or Chairperson
+      const isDirector = currentUser.role !== UserRole.SECRETARY;
+      if (!isDirector) {
+          showToast(AlertTriangle, 'Insufficient Authority', 'Password resets must be approved by a Director or the Chairperson.', 'bg-red-600');
           return;
       }
 
@@ -128,15 +139,14 @@ const App: React.FC = () => {
           if (u.id === targetUserId && u.passwordResetRequest) {
              const approvals = [...u.passwordResetRequest.approvals, currentUser.id];
              
-             // Check if we have enough approvals (1 additional director + secretary's original request implies 2 people aware)
+             // In this model, 1 additional Director approval satisfies the 2-person requirement (Secretary + Director)
              if (approvals.length >= 1) {
-                 // APPLY CHANGE
                  addLog('PWD_CHANGE_FINAL', `Password reset finalized for ${u.name}. Approved by ${currentUser.name}.`, currentUser);
-                 showToast(Lock, 'Password Changed', `Temporary password generated and sent to ${u.name}.`, 'bg-green-600');
-                 return { ...u, passwordResetRequest: undefined }; // Clear request
+                 showToast(Lock, 'Password Finalized', `Access restored for ${u.name}. Credentials dispatched.`, 'bg-green-600');
+                 return { ...u, passwordResetRequest: undefined }; 
              } else {
                  addLog('PWD_CHANGE_VOTE', `Voted to approve password reset for ${u.name}`, currentUser);
-                 showToast(CheckCircle, 'Vote Recorded', 'Waiting for final confirmation.', 'bg-blue-600');
+                 showToast(CheckCircle, 'Approval Recorded', 'Waiting for protocol finalization.', 'bg-blue-600');
                  return { ...u, passwordResetRequest: { ...u.passwordResetRequest, approvals } };
              }
           }
@@ -154,12 +164,10 @@ const App: React.FC = () => {
 
   const handleScheduleMeeting = (meetingData: Partial<Meeting>) => {
     if (meetingData.id) {
-        // Edit Existing
         setMeetings(meetings.map(m => m.id === meetingData.id ? { ...m, ...meetingData } as Meeting : m));
         addLog('MEETING_UPDATE', `Updated meeting details: ${meetingData.title}`, currentUser!);
         showToast(CalendarCheck, 'Meeting Updated', 'Calendar event has been revised.', 'bg-blue-600');
     } else {
-        // Create New
         const newMeeting: Meeting = {
             id: `m_${Date.now()}`,
             title: meetingData.title || 'Untitled Meeting',
@@ -171,7 +179,7 @@ const App: React.FC = () => {
         };
         setMeetings(prev => [...prev, newMeeting]);
         addLog('MEETING_SCHEDULE', `Scheduled new meeting: ${newMeeting.title}`, currentUser!);
-        showToast(CalendarCheck, 'Invitations Sent', `Meeting scheduled for ${new Date(newMeeting.date).toLocaleDateString()}. Email notifications dispatched.`, 'bg-brand-900');
+        showToast(CalendarCheck, 'Invitations Sent', `Meeting scheduled and notifications dispatched.`, 'bg-brand-900');
     }
   };
 
@@ -188,30 +196,27 @@ const App: React.FC = () => {
         : d
     ));
     addLog('DOC_DELETE_REQ', `Requested deletion for: ${doc.title}`, currentUser!);
-    showToast(Trash2, 'Deletion Requested', 'Approval required from 1 additional member to finalize deletion.', 'bg-orange-600');
+    showToast(Trash2, 'Deletion Requested', 'Approval required from 1 additional member to finalize.', 'bg-orange-600');
   };
 
   const handleDeleteApprove = (doc: RepositoryDoc) => {
     const updatedDocs = repositoryDocs.map(d => {
         if (d.id === doc.id && d.pendingDeletion) {
             const approvals = [...d.pendingDeletion.approvals, currentUser!.id];
-            // Check if we have 1 additional approver (requester + 1 other)
             if (approvals.length >= 1) {
-                return null; // Mark for removal
+                return null; 
             }
             return { ...d, pendingDeletion: { ...d.pendingDeletion, approvals } };
         }
         return d;
     });
 
-    // Remove nulls
     const filteredDocs = updatedDocs.filter(d => d !== null) as RepositoryDoc[];
     
-    // Check if it was removed
     if (filteredDocs.length < repositoryDocs.length) {
         setRepositoryDocs(filteredDocs);
         addLog('DOC_DELETE_FINAL', `Permanently deleted document: ${doc.title}`, currentUser!);
-        showToast(Trash2, 'Document Deleted', 'The document has been permanently removed from the repository.', 'bg-red-600');
+        showToast(Trash2, 'Document Deleted', 'Permanently removed from the repository.', 'bg-red-600');
     } else {
         setRepositoryDocs(filteredDocs);
         addLog('DOC_DELETE_VOTE', `Voted to delete document: ${doc.title}`, currentUser!);
@@ -254,9 +259,8 @@ const App: React.FC = () => {
         } 
       : a
     ));
-    const actionTask = actions.find(a => a.id === actionId)?.task;
-    addLog('ACTION_EDIT_REQ', `Requested update for action: ${actionTask}`, currentUser);
-    showToast(Edit, 'Update Requested', 'Approval required from 1 additional member to finalize.', 'bg-orange-600');
+    addLog('ACTION_EDIT_REQ', `Requested update for action item.`, currentUser);
+    showToast(Edit, 'Update Requested', 'Approval required from 1 additional member.', 'bg-orange-600');
   };
 
   const handleApproveEditAction = (actionId: string) => {
@@ -271,7 +275,6 @@ const App: React.FC = () => {
             approvals.push(currentUser.id);
          }
 
-         // Check if approved (Requester + 1 other)
          if (approvals.length >= 1) {
              applied = true;
              return {
@@ -290,13 +293,12 @@ const App: React.FC = () => {
       return a;
     }));
 
-    const actionTask = actions.find(a => a.id === actionId)?.task;
     if (applied) {
-        addLog('ACTION_EDIT_FINAL', `Applied updates to action: ${actionTask}`, currentUser);
+        addLog('ACTION_EDIT_FINAL', `Applied updates to action item.`, currentUser);
         showToast(CheckCircle, 'Action Updated', 'The changes have been applied successfully.', 'bg-green-600');
     } else {
-        addLog('ACTION_EDIT_VOTE', `Approved update for action: ${actionTask}`, currentUser);
-        showToast(CheckCircle, 'Approval Recorded', 'Waiting for final confirmation.', 'bg-blue-600');
+        addLog('ACTION_EDIT_VOTE', `Approved update for action item.`, currentUser);
+        showToast(CheckCircle, 'Approval Recorded', 'Waiting for protocol finalization.', 'bg-blue-600');
     }
   };
 
@@ -327,7 +329,7 @@ const App: React.FC = () => {
   };
 
   const handleSendReminders = () => {
-    showToast(CheckCircle, 'Automated Reminders Sent', '3 pending action owners notified via WhatsApp & Email.', 'bg-brand-900');
+    showToast(CheckCircle, 'Automated Reminders Sent', 'Pending action owners notified via secure gateway.', 'bg-brand-900');
     addLog('SYSTEM_ACTION', 'Triggered automated deadline reminders');
   };
 
@@ -335,7 +337,6 @@ const App: React.FC = () => {
       const avatarUrl = data.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.name)}&background=random`;
 
       if (editingUser) {
-          // Update Existing User
           const updatedUsers = users.map(u => u.id === editingUser.id ? {
               ...u,
               name: data.name,
@@ -348,20 +349,15 @@ const App: React.FC = () => {
 
           setUsers(updatedUsers);
           
-          // Update currentUser state if self-editing to reflect changes immediately
           if (currentUser && currentUser.id === editingUser.id) {
             const updatedCurrent = updatedUsers.find(u => u.id === currentUser.id);
             if (updatedCurrent) setCurrentUser(updatedCurrent);
           }
           
-          const tempUser = users.find(u => u.id === editingUser.id);
-          if (tempUser) {
-             addLog('PROFILE_UPDATE', `Updated profile details for user: ${data.name}`, currentUser || tempUser);
-          }
+          addLog('PROFILE_UPDATE', `Updated profile details for user: ${data.name}`, currentUser || editingUser);
           setEditingUser(null);
           showToast(CheckCircle, 'Profile Updated', 'Profile details have been updated successfully.', 'bg-blue-600');
       } else {
-          // Create New User
           const newUser: User = {
               id: `u_${Date.now()}`,
               name: data.name,
@@ -376,7 +372,7 @@ const App: React.FC = () => {
           };
           setUsers([...users, newUser]);
           addLog('PROFILE_CREATE', `New director registration: ${newUser.name}`, newUser);
-          showToast(CheckCircle, 'Profile Submitted', 'Your profile is pending approval from 2 directors.', 'bg-brand-900');
+          showToast(CheckCircle, 'Profile Submitted', 'Awaiting Director approval and Secretary sign-off.', 'bg-brand-900');
       }
       setView('LOGIN');
   };
@@ -428,10 +424,6 @@ const App: React.FC = () => {
     }));
   };
 
-  // ------------------------------------------------------------------
-  //  GOVERNANCE WORKFLOW LOGIC
-  // ------------------------------------------------------------------
-  
   const getApprovalCounts = (approvals: string[]) => {
     const approvers = users.filter(u => approvals.includes(u.id));
     const directorCount = approvers.filter(u => u.role !== UserRole.SECRETARY).length;
@@ -445,36 +437,31 @@ const App: React.FC = () => {
     const targetUser = users.find(u => u.id === targetUserId);
     if (!targetUser) return;
 
-    // 1. Compliance Check: Documents
     if (!targetUser.documents?.certifiedId || !targetUser.documents?.proofOfResidence || !targetUser.documents?.cv) {
-        showToast(AlertTriangle, 'Compliance Alert', 'Cannot approve. Mandatory documents are missing.', 'bg-red-600');
+        showToast(AlertTriangle, 'Compliance Alert', 'Mandatory FICA documents are missing.', 'bg-red-600');
         return;
     }
 
     const { directorCount } = getApprovalCounts(targetUser.approvals);
     const isSecretary = currentUser.role === UserRole.SECRETARY;
 
-    // 2. Logic: Secretary can only sign off AFTER 2 directors
     if (isSecretary && directorCount < 2) {
-        showToast(AlertTriangle, 'Protocol Violation', 'Secretary can only provide final sign-off after 2 Director approvals.', 'bg-orange-600');
+        showToast(AlertTriangle, 'Protocol Violation', 'Secretary can only sign-off after 2 Director approvals.', 'bg-orange-600');
         return;
     }
 
     setUsers(users.map(u => {
         if (u.id === targetUserId) {
             const updatedApprovals = [...u.approvals, currentUser.id];
-            
-            // Check new state
             const newCounts = getApprovalCounts(updatedApprovals);
             let newStatus = u.status;
             
-            // ACTIVATION CONDITION: 2+ Directors AND Secretary
             if (newCounts.directorCount >= 2 && newCounts.hasSecretary) {
                 newStatus = 'ACTIVE';
                 showToast(UserCheck, 'Director Activated', `${u.name} now has full board access.`, 'bg-green-600');
                 addLog('USER_APPROVAL_FINAL', `Secretary Final Sign-off: Activated user ${u.name}`, currentUser);
             } else {
-                showToast(CheckCircle, 'Vote Recorded', `Approval recorded. Pending final sign-off.`, 'bg-blue-600');
+                showToast(CheckCircle, 'Approval Recorded', `Protocol progress: ${newCounts.directorCount}/2 Directors.`, 'bg-blue-600');
                 addLog('USER_APPROVAL_VOTE', `Voted to approve user ${u.name}`, currentUser);
             }
 
@@ -495,7 +482,7 @@ const App: React.FC = () => {
         terminationReason: reason
       } : u));
       const targetName = users.find(u => u.id === targetUserId)?.name;
-      addLog('TERMINATION_INIT', `Initiated termination proceedings for ${targetName}. Reason: ${reason}`, currentUser);
+      addLog('TERMINATION_INIT', `Initiated termination proceedings for ${targetName}.`, currentUser);
       showToast(UserMinus, 'Proceedings Initiated', 'Termination vote is now open in Governance Gateway.', 'bg-red-600');
   };
 
@@ -508,7 +495,6 @@ const App: React.FC = () => {
       const { directorCount } = getApprovalCounts(currentTermApprovals);
       const isSecretary = currentUser.role === UserRole.SECRETARY;
 
-       // Logic: Secretary can only finalize termination AFTER 2 directors
       if (isSecretary && directorCount < 2) {
         showToast(AlertTriangle, 'Protocol Violation', 'Secretary can only finalize termination after 2 Director votes.', 'bg-orange-600');
         return;
@@ -517,17 +503,15 @@ const App: React.FC = () => {
       setUsers(users.map(u => {
         if (u.id === targetUserId) {
             const updatedTermApprovals = [...(u.terminationApprovals || []), currentUser.id];
-            
             const newCounts = getApprovalCounts(updatedTermApprovals);
             let newStatus = u.status;
 
-            // TERMINATION CONDITION: 2+ Directors AND Secretary
             if (newCounts.directorCount >= 2 && newCounts.hasSecretary) {
                 newStatus = 'TERMINATED';
-                showToast(UserMinus, 'Director Archived', `${u.name} has been terminated and archived.`, 'bg-red-800');
+                showToast(UserMinus, 'Director Archived', `${u.name} has been formally terminated.`, 'bg-red-800');
                 addLog('USER_TERMINATION_FINAL', `Secretary Final Sign-off: Terminated user ${u.name}`, currentUser);
             } else {
-                showToast(CheckCircle, 'Termination Vote Recorded', `Vote recorded. Pending final sign-off.`, 'bg-orange-600');
+                showToast(CheckCircle, 'Termination Vote Recorded', `Waiting for final sign-off.`, 'bg-orange-600');
                 addLog('USER_TERMINATION_VOTE', `Voted to terminate user ${u.name}`, currentUser);
             }
 
@@ -537,9 +521,6 @@ const App: React.FC = () => {
       }));
   };
 
-  // ------------------------------------------------------------------
-
-  // Onboarding View
   if (view === 'ONBOARDING') {
       return (
           <DirectorOnboarding 
@@ -550,7 +531,6 @@ const App: React.FC = () => {
       );
   }
 
-  // Login View
   if (!currentUser) {
     return (
         <Login 
@@ -562,7 +542,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Active Meeting View
   if (activeMeeting) {
     return (
       <MeetingView 
@@ -575,7 +554,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Audit Log View
   if (view === 'AUDIT_LOG') {
     const visibleLogs = currentUser?.role === UserRole.SECRETARY 
       ? auditLogs 
@@ -589,7 +567,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Calendar View
   if (view === 'CALENDAR') {
     return (
       <CalendarView 
@@ -602,7 +579,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Repository View
   if (view === 'REPOSITORY') {
     return (
       <RepositoryView 
@@ -616,7 +592,6 @@ const App: React.FC = () => {
     );
   }
 
-  // Dashboard View
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 relative">
       <Dashboard 
@@ -624,7 +599,7 @@ const App: React.FC = () => {
         users={users}
         meetings={meetings} 
         actions={actions} 
-        pendingUsers={users} // Pass all users, Dashboard filters for pending actions
+        pendingUsers={users}
         documents={repositoryDocs}
         onJoinMeeting={handleJoinMeeting}
         onSimulateMessage={handleSimulateMessage}
@@ -646,7 +621,6 @@ const App: React.FC = () => {
         onApprovePasswordReset={handleApprovePasswordReset}
       />
 
-      {/* Global Toast Notification */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
           <div className={`${toast.color} text-white p-4 rounded-lg shadow-xl flex items-start space-x-3 max-w-sm`}>
