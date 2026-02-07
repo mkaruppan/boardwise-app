@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Boardwise SA</title>
@@ -10,57 +10,75 @@
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-            },
+            fontFamily: { sans: ['Inter', 'sans-serif'] },
             colors: {
               brand: {
-                900: '#0f172a', // Deep Navy
+                900: '#0f172a',
                 800: '#1e293b',
-                700: '#334155',
-                accent: '#38bdf8', // Cyan/Sky Blue (Replacing Gold)
-                silver: '#e2e8f0',
+                accent: '#38bdf8',
               }
             }
           }
         }
       }
     </script>
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.460.0"
       }
-      /* Custom scrollbar for board packs */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #94a3b8;
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
-    "react-dom/client": "https://esm.sh/react-dom@^19.2.4/client",
-    "react-dom": "https://esm.sh/react-dom@^19.2.4",
-    "react": "https://esm.sh/react@^19.2.4",
-    "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
-  }
-}
-</script>
+    }
+    </script>
 </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<body class="bg-slate-50">
+    <div id="root">
+        <div class="flex items-center justify-center h-screen">
+            <p class="text-slate-400 animate-pulse">Initializing Boardwise Portal...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import React from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { LayoutDashboard, FileText, Calendar, ShieldCheck } from 'lucide-react';
+
+        const App = () => {
+            return (
+                <div className="flex h-screen">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-brand-900 text-white p-6">
+                        <h1 className="text-2xl font-bold mb-8">Board<span className="text-brand-accent">wise</span></h1>
+                        <nav className="space-y-4">
+                            <div className="flex items-center gap-3 text-brand-accent"><LayoutDashboard size={20}/> Dashboard</div>
+                            <div className="flex items-center gap-3 opacity-70"><FileText size={20}/> Board Packs</div>
+                            <div className="flex items-center gap-3 opacity-70"><Calendar size={20}/> Meetings</div>
+                        </nav>
+                    </aside>
+
+                    {/* Main */}
+                    <main className="flex-1 p-10">
+                        <header className="flex justify-between items-center mb-10">
+                            <h2 className="text-3xl font-bold text-slate-800">Welcome back, Director</h2>
+                            <div className="bg-emerald-100 text-emerald-700 px-4 py-1 rounded-full text-sm flex items-center gap-2">
+                                <ShieldCheck size={16}/> Secure Connection
+                            </div>
+                        </header>
+                        
+                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                            <h3 className="text-lg font-semibold mb-2">No active board packs</h3>
+                            <p className="text-slate-500">Your next scheduled meeting is for Q1 Strategy Review.</p>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = createRoot(container);
+        root.render(React.createElement(App));
+    </script>
+</body>
 </html>
