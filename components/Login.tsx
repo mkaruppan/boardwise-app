@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { User } from '../types';
+import { User } from '../types.ts';
 import { Lock, Loader2, UserPlus, Mail, Key, Eye, EyeOff, AlertCircle, Info, Shield, CheckCircle } from 'lucide-react';
-import Logo from './Logo';
+import Logo from './Logo.tsx';
 
 interface LoginProps {
   onLogin: (user: User) => void;
@@ -17,7 +17,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   
-  // Forgot Password State
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
@@ -52,8 +51,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 relative">
-        
-        {/* Header */}
         <div className="bg-brand-900 p-8 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-10 opacity-10">
               <Logo className="w-32 h-32" />
@@ -104,11 +101,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
             <div className="space-y-1">
               <div className="flex justify-between items-center">
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Password</label>
-                <button 
-                  type="button" 
-                  onClick={() => setShowForgotModal(true)}
-                  className="text-xs text-brand-900 hover:text-brand-accent hover:underline font-medium"
-                >
+                <button type="button" onClick={() => setShowForgotModal(true)} className="text-xs text-brand-900 hover:text-brand-accent hover:underline font-medium">
                   Forgot Password?
                 </button>
               </div>
@@ -124,30 +117,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
                   className="block w-full pl-10 pr-10 py-3 border border-slate-200 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent transition-colors"
                   placeholder="••••••••"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
-                  tabIndex={-1}
-                >
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none" tabIndex={-1}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex items-center justify-center py-3 px-4 bg-brand-900 hover:bg-brand-800 text-white rounded-lg font-bold shadow-md transition-all hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed mt-4 border border-brand-700"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Authenticating...
-                </>
-              ) : (
-                'Access Portal'
-              )}
+            <button type="submit" disabled={isLoading} className="w-full flex items-center justify-center py-3 px-4 bg-brand-900 hover:bg-brand-800 text-white rounded-lg font-bold shadow-md transition-all hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed mt-4 border border-brand-700">
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : 'Access Portal'}
             </button>
           </form>
 
@@ -159,32 +136,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                    {users.filter(u => u.status === 'ACTIVE').slice(0, 4).map(u => (
-                      <button 
-                        key={u.id}
-                        onClick={() => fillDemo(u.email || '')}
-                        className="text-left px-2 py-1.5 hover:bg-slate-200 rounded truncate transition-colors border border-slate-200 bg-white"
-                      >
+                      <button key={u.id} onClick={() => fillDemo(u.email || '')} className="text-left px-2 py-1.5 hover:bg-slate-200 rounded truncate transition-colors border border-slate-200 bg-white">
                          <span className="font-semibold text-slate-700">{u.name.split(' ')[0]}</span>
                       </button>
                    ))}
                 </div>
              </div>
 
-            <button 
-                onClick={onRegister}
-                className="w-full flex items-center justify-center space-x-2 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg transition-colors font-medium text-sm"
-            >
+            <button onClick={onRegister} className="w-full flex items-center justify-center space-x-2 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg transition-colors font-medium text-sm">
                 <UserPlus className="w-4 h-4" />
                 <span>New Director Registration</span>
             </button>
-            <p className="text-[10px] text-center text-slate-400 mt-4 flex items-center justify-center gap-1.5">
-              <Shield className="w-3 h-3" />
-              <span>King IV Aligned • Companies Act Compliant</span>
-            </p>
           </div>
         </div>
 
-        {/* Forgot Password Modal */}
         {showForgotModal && (
           <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm p-8 flex flex-col justify-center animate-in fade-in zoom-in">
              {!resetSent ? (
@@ -194,26 +159,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
                  <form onSubmit={handleForgotSubmit} className="space-y-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        className="block w-full px-3 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent"
-                        placeholder="name@boardwise.co.za"
-                      />
+                      <input type="email" required value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} className="block w-full px-3 py-3 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent" placeholder="name@boardwise.co.za" />
                     </div>
                     <div className="flex flex-col space-y-2">
-                      <button type="submit" className="w-full bg-brand-900 text-white font-bold py-3 rounded-lg hover:bg-brand-800 transition-colors">
-                        Send Reset Link
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => { setShowForgotModal(false); setForgotEmail(''); }}
-                        className="w-full bg-white text-slate-600 font-medium py-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
+                      <button type="submit" className="w-full bg-brand-900 text-white font-bold py-3 rounded-lg hover:bg-brand-800 transition-colors">Send Reset Link</button>
+                      <button type="button" onClick={() => { setShowForgotModal(false); setForgotEmail(''); }} className="w-full bg-white text-slate-600 font-medium py-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors">Cancel</button>
                     </div>
                  </form>
                </>
@@ -223,20 +173,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, users, onRegister, onForgotPassw
                    <CheckCircle className="w-6 h-6 text-green-600" />
                  </div>
                  <h3 className="text-xl font-bold text-slate-900 mb-2">Check your email</h3>
-                 <p className="text-sm text-slate-600 mb-6">
-                   We've sent a password reset link to <span className="font-semibold text-slate-900">{forgotEmail}</span>.
-                 </p>
-                 <button 
-                    onClick={() => { setShowForgotModal(false); setResetSent(false); setForgotEmail(''); }}
-                    className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition-colors"
-                  >
-                    Return to Login
-                  </button>
+                 <p className="text-sm text-slate-600 mb-6">We've sent a password reset link to <span className="font-semibold text-slate-900">{forgotEmail}</span>.</p>
+                 <button onClick={() => { setShowForgotModal(false); setResetSent(false); setForgotEmail(''); }} className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition-colors">Return to Login</button>
                </div>
              )}
           </div>
         )}
-
       </div>
     </div>
   );

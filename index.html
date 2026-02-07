@@ -42,46 +42,5 @@
             <p class="text-slate-400 animate-pulse">Initializing Boardwise Portal...</p>
         </div>
     </div>
-
-    <script type="module">
-        import React from 'react';
-        import { createRoot } from 'react-dom/client';
-        import { LayoutDashboard, FileText, Calendar, ShieldCheck } from 'lucide-react';
-
-        const App = () => {
-            return (
-                <div className="flex h-screen">
-                    {/* Sidebar */}
-                    <aside className="w-64 bg-brand-900 text-white p-6">
-                        <h1 className="text-2xl font-bold mb-8">Board<span className="text-brand-accent">wise</span></h1>
-                        <nav className="space-y-4">
-                            <div className="flex items-center gap-3 text-brand-accent"><LayoutDashboard size={20}/> Dashboard</div>
-                            <div className="flex items-center gap-3 opacity-70"><FileText size={20}/> Board Packs</div>
-                            <div className="flex items-center gap-3 opacity-70"><Calendar size={20}/> Meetings</div>
-                        </nav>
-                    </aside>
-
-                    {/* Main */}
-                    <main className="flex-1 p-10">
-                        <header className="flex justify-between items-center mb-10">
-                            <h2 className="text-3xl font-bold text-slate-800">Welcome back, Director</h2>
-                            <div className="bg-emerald-100 text-emerald-700 px-4 py-1 rounded-full text-sm flex items-center gap-2">
-                                <ShieldCheck size={16}/> Secure Connection
-                            </div>
-                        </header>
-                        
-                        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 className="text-lg font-semibold mb-2">No active board packs</h3>
-                            <p className="text-slate-500">Your next scheduled meeting is for Q1 Strategy Review.</p>
-                        </div>
-                    </main>
-                </div>
-            );
-        };
-
-        const container = document.getElementById('root');
-        const root = createRoot(container);
-        root.render(React.createElement(App));
-    </script>
 </body>
 </html>

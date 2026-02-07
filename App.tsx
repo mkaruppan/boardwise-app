@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import MeetingView from './components/MeetingView';
-import DirectorOnboarding from './components/DirectorOnboarding';
-import AuditLogView from './components/AuditLogView';
-import CalendarView from './components/CalendarView';
-import RepositoryView from './components/RepositoryView';
-import { User, Meeting, ActionItem, ActionStatus, AuditLogEntry, UserRole, RepositoryDoc, MeetingStatus } from './types';
-import { MOCK_ACTIONS, INITIAL_MEETINGS, MOCK_USERS, MOCK_DOCUMENTS } from './constants';
+import Login from './components/Login.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import MeetingView from './components/MeetingView.tsx';
+import DirectorOnboarding from './components/DirectorOnboarding.tsx';
+import AuditLogView from './components/AuditLogView.tsx';
+import CalendarView from './components/CalendarView.tsx';
+import RepositoryView from './components/RepositoryView.tsx';
+import { User, Meeting, ActionItem, ActionStatus, AuditLogEntry, UserRole, RepositoryDoc, MeetingStatus } from './types.ts';
+import { MOCK_ACTIONS, INITIAL_MEETINGS, MOCK_USERS, MOCK_DOCUMENTS } from './constants.ts';
 import { MessageSquare, Mail, CheckCircle, UserCheck, AlertTriangle, UserMinus, Snowflake, CalendarCheck, Trash2, Edit, PlusCircle, Key, Lock } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -20,11 +20,9 @@ const App: React.FC = () => {
   const [view, setView] = useState<'LOGIN' | 'ONBOARDING' | 'AUDIT_LOG' | 'CALENDAR' | 'REPOSITORY'>('LOGIN');
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   
-  // State for handling edits of pending users
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [toast, setToast] = useState<{icon: any, title: string, message: string, color: string} | null>(null);
 
-  // --- LOGGING HELPER ---
   const addLog = (action: string, details: string, userOverride?: User) => {
     const userToLog = userOverride || currentUser;
     if (!userToLog) return;
@@ -36,7 +34,7 @@ const App: React.FC = () => {
       userName: userToLog.name,
       action: action,
       details: details,
-      ipHash: Math.random().toString(36).substring(7).toUpperCase() // Simulated IP hash
+      ipHash: Math.random().toString(36).substring(7).toUpperCase()
     };
     setAuditLogs(prev => [...prev, newLog]);
   };
@@ -71,8 +69,6 @@ const App: React.FC = () => {
     setCurrentUser(null);
     setView('LOGIN');
   };
-
-  // --- PASSWORD RESET LOGIC ---
 
   const handleForgotPassword = (email: string) => {
      const target = users.find(u => u.email?.toLowerCase() === email.toLowerCase());
@@ -121,14 +117,11 @@ const App: React.FC = () => {
       const targetUser = users.find(u => u.id === targetUserId);
       if (!targetUser || !targetUser.passwordResetRequest) return;
 
-      // Governance Rule: Secretary initiates, Director approves. 
-      // Requesters cannot approve their own requests.
       if (currentUser.id === targetUser.passwordResetRequest.requestedBy) {
           showToast(AlertTriangle, 'Conflict of Interest', 'Requesters cannot approve their own governance motions.', 'bg-red-600');
           return;
       }
 
-      // Ensure the approver is a Director or Chairperson
       const isDirector = currentUser.role !== UserRole.SECRETARY;
       if (!isDirector) {
           showToast(AlertTriangle, 'Insufficient Authority', 'Password resets must be approved by a Director or the Chairperson.', 'bg-red-600');
@@ -138,8 +131,6 @@ const App: React.FC = () => {
       setUsers(prev => prev.map(u => {
           if (u.id === targetUserId && u.passwordResetRequest) {
              const approvals = [...u.passwordResetRequest.approvals, currentUser.id];
-             
-             // In this model, 1 additional Director approval satisfies the 2-person requirement (Secretary + Director)
              if (approvals.length >= 1) {
                  addLog('PWD_CHANGE_FINAL', `Password reset finalized for ${u.name}. Approved by ${currentUser.name}.`, currentUser);
                  showToast(Lock, 'Password Finalized', `Access restored for ${u.name}. Credentials dispatched.`, 'bg-green-600');

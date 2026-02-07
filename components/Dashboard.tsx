@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Meeting, ActionItem, User, MeetingStatus, UserRole, RepositoryDoc } from '../types';
-import ActionTracker from './ActionTracker';
+import { Meeting, ActionItem, User, MeetingStatus, UserRole, RepositoryDoc } from '../types.ts';
+import ActionTracker from './ActionTracker.tsx';
 import { Calendar, Video, RefreshCw, PlusCircle, Check, Loader2, MessageSquare, Mail, Zap, Send, TrendingUp, AlertOctagon, UserCheck, FileCheck, CheckCircle2, FileText, LogOut, Edit, Lock, AlertTriangle, UserMinus, ShieldAlert, Snowflake, Unlock, FolderOpen, ListChecks, FileSearch, UserCog, Archive, Key } from 'lucide-react';
-import { planNextMeetingStrategy } from '../services/geminiService';
-import { PAST_MINUTES_MOCK, LATEST_PACK_CONTENT } from '../constants';
+import { planNextMeetingStrategy } from '../services/geminiService.ts';
+import { PAST_MINUTES_MOCK, LATEST_PACK_CONTENT } from '../constants.ts';
 
 interface DashboardProps {
   user: User;
@@ -46,15 +46,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   const isChair = user.role === UserRole.CHAIRPERSON;
   const isDirector = user.role !== UserRole.SECRETARY;
   
-  // Restrict AI Planner to Secretary and Executives only
   const showAiPlanner = user.role === UserRole.SECRETARY || user.role === UserRole.EXECUTIVE;
-  
-  // Hide Live Omni-Channel Simulation for Non-Executives
   const showLiveSimulation = user.role !== UserRole.NON_EXECUTIVE;
 
   const terminatedUsers = users.filter(u => u.status === 'TERMINATED');
 
-  // Filter for actual items needing attention in the Gateway
   const governanceQueue = pendingUsers.filter(u => 
       u.status === 'PENDING_APPROVAL' || 
       u.status === 'PENDING_TERMINATION' || 
@@ -92,46 +88,29 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-8">
-      
-      {/* Welcome Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
             <h1 className="text-3xl font-bold text-brand-900">Welcome, {user.name.split(' ')[0]}</h1>
             <p className="text-slate-500 mt-1">Boardwise SA • {user.role.replace('_', ' ')} Portal</p>
         </div>
         <div className="flex flex-wrap gap-2">
-            <button 
-                onClick={onViewRepository}
-                className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors"
-            >
+            <button onClick={onViewRepository} className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors">
                 <FolderOpen className="w-4 h-4 mr-2 text-slate-500" />
                 <span>Documents</span>
             </button>
-            <button 
-                onClick={onViewCalendar}
-                className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm"
-            >
+            <button onClick={onViewCalendar} className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm">
                 <Calendar className="w-4 h-4 mr-2 text-slate-500" />
                 <span>Calendar</span>
             </button>
-            <button 
-                onClick={onManageProfile}
-                className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors"
-            >
+            <button onClick={onManageProfile} className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors">
                 <UserCog className="w-4 h-4 mr-2 text-slate-500" />
                 <span>Profile</span>
             </button>
-            <button 
-                onClick={onViewAuditLogs}
-                className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors"
-            >
+            <button onClick={onViewAuditLogs} className="flex items-center px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium shadow-sm transition-colors">
                 <FileText className="w-4 h-4 mr-2 text-slate-500" />
                 <span>Audit Log</span>
             </button>
-            <button 
-                onClick={onLogout}
-                className="flex items-center px-4 py-2 bg-red-50 border border-red-100 rounded-md text-red-700 hover:bg-red-100 font-medium shadow-sm transition-colors"
-            >
+            <button onClick={onLogout} className="flex items-center px-4 py-2 bg-red-50 border border-red-100 rounded-md text-red-700 hover:bg-red-100 font-medium shadow-sm transition-colors">
                 <LogOut className="w-4 h-4 mr-2" />
                 <span>Sign Out</span>
             </button>
@@ -139,11 +118,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left Col: Meetings & Governance */}
         <div className="lg:col-span-1 space-y-6">
-            
-            {/* Governance Gateway */}
             {governanceQueue.length > 0 && (
                 <div className="bg-white p-4 rounded-lg shadow-sm border border-brand-900/10 bg-gradient-to-b from-blue-50/50">
                     <div className="flex items-center justify-between mb-3">
@@ -172,7 +147,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                             if (isTermination) { borderColor = 'border-red-200'; bgColor = 'bg-red-50'; }
                             if (isPasswordReset) { borderColor = 'border-orange-200'; bgColor = 'bg-orange-50'; }
 
-                            // Protocol check for Reset: Requested by X, must be approved by a Director who is NOT X.
                             const canApproveReset = isPasswordReset && isDirector && (pUser.passwordResetRequest?.requestedBy !== user.id);
 
                             return (
@@ -186,13 +160,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                                             </p>
                                             <p className="text-xs text-slate-500">{pUser.role.replace('_', ' ')}</p>
                                         </div>
-                                        {!isTermination && !isPasswordReset && (
-                                            <div className="flex space-x-1">
-                                                {pUser.documents?.certifiedId && <FileCheck className="w-3 h-3 text-green-500" title="Certified ID" />}
-                                                {pUser.documents?.proofOfResidence && <FileCheck className="w-3 h-3 text-green-500" title="Proof of Res" />}
-                                                {pUser.documents?.cv && <FileCheck className="w-3 h-3 text-green-500" title="CV" />}
-                                            </div>
-                                        )}
                                     </div>
 
                                     {isTermination && pUser.terminationReason && (
@@ -235,11 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
                                         <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
                                             {isSecretary && !isTermination && !isPasswordReset && (
-                                                <button 
-                                                    onClick={() => onEditPending(pUser)}
-                                                    className="text-xs bg-slate-100 text-slate-600 px-2 py-1.5 rounded hover:bg-slate-200 transition-colors font-medium flex items-center"
-                                                    title="Edit Application"
-                                                >
+                                                <button onClick={() => onEditPending(pUser)} className="text-xs bg-slate-100 text-slate-600 px-2 py-1.5 rounded hover:bg-slate-200 transition-colors font-medium flex items-center">
                                                     <Edit className="w-3 h-3" />
                                                 </button>
                                             )}
@@ -280,7 +243,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             )}
             
-            {/* Board Registry */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
                     <div className="flex items-center space-x-2">
@@ -306,31 +268,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                                  
                                  <div className="flex items-center">
                                     {isSecretary && (
-                                        <button
-                                            onClick={() => onEditPending(activeUser)}
-                                            className="text-xs p-1 rounded transition-all mr-1 text-slate-400 hover:text-brand-900 hover:bg-slate-100"
-                                            title="Edit Profile"
-                                        >
+                                        <button onClick={() => onEditPending(activeUser)} className="text-xs p-1 rounded transition-all mr-1 text-slate-400 hover:text-brand-900 hover:bg-slate-100">
                                             <Edit className="w-4 h-4" />
                                         </button>
                                     )}
 
                                     {isSecretary && !isMe && (
-                                        <button
-                                            onClick={() => onToggleFreeze(activeUser.id)}
-                                            className={`text-xs p-1 rounded transition-all mr-1 ${
-                                                isFrozen 
-                                                ? 'text-green-500 hover:bg-green-50' 
-                                                : 'text-cyan-500 hover:bg-cyan-50'
-                                            }`}
-                                            title={isFrozen ? "Unfreeze Account" : "Freeze Account"}
-                                        >
+                                        <button onClick={() => onToggleFreeze(activeUser.id)} className={`text-xs p-1 rounded transition-all mr-1 ${isFrozen ? 'text-green-500 hover:bg-green-50' : 'text-cyan-500 hover:bg-cyan-50'}`}>
                                             {isFrozen ? <Unlock className="w-4 h-4" /> : <Snowflake className="w-4 h-4" />}
                                         </button>
                                     )}
 
                                     {isSecretary && !isFrozen && !isMe && (
-                                        <button
+                                        <button 
                                             onClick={() => {
                                                 if (confirm(`Initiate governed password reset for ${activeUser.name}? Requires Director approval.`)) {
                                                     const reason = prompt("Enter formal reason for reset:");
@@ -338,7 +288,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                 }
                                             }}
                                             className="text-xs p-1 rounded transition-all mr-1 text-slate-400 hover:text-orange-500 hover:bg-orange-50"
-                                            title="Governance Reset"
                                         >
                                             <Key className="w-4 h-4" />
                                         </button>
@@ -353,7 +302,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                                                 }
                                             }}
                                             className="text-xs text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded transition-all"
-                                            title="Initiate Removal"
                                         >
                                             <UserMinus className="w-4 h-4" />
                                         </button>
@@ -364,33 +312,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                     })}
                 </div>
             </div>
-
-             {/* Archived Directors */}
-            {terminatedUsers.length > 0 && (
-                <div className="bg-slate-50 p-4 rounded-lg shadow-inner border border-slate-200">
-                    <div className="flex items-center justify-between mb-3 border-b border-slate-200 pb-2">
-                        <div className="flex items-center space-x-2">
-                            <Archive className="w-4 h-4 text-slate-500" />
-                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Archived Records</span>
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        {terminatedUsers.map(archivedUser => (
-                            <div key={archivedUser.id} className="flex items-center justify-between p-2 rounded bg-white border border-slate-100 opacity-75">
-                                <div className="flex items-center space-x-2">
-                                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-slate-100 text-slate-400">
-                                        {archivedUser.initials}
-                                    </div>
-                                    <div>
-                                        <p className="text-xs font-bold text-slate-500 line-through">{archivedUser.name}</p>
-                                        <p className="text-[10px] text-slate-400 italic">Terminated: {archivedUser.terminationReason || 'No reason'}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             <h2 className="text-lg font-bold text-slate-800 flex items-center pt-2">
                 Meetings
@@ -414,10 +335,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <p className="text-sm text-slate-500 mb-4">{meeting.location}</p>
                         
                         {meeting.status === MeetingStatus.LIVE ? (
-                            <button 
-                                onClick={() => onJoinMeeting(meeting)}
-                                className="w-full flex items-center justify-center space-x-2 bg-brand-900 text-white py-2 rounded-md font-semibold hover:bg-brand-800"
-                            >
+                            <button onClick={() => onJoinMeeting(meeting)} className="w-full flex items-center justify-center space-x-2 bg-brand-900 text-white py-2 rounded-md font-semibold hover:bg-brand-800">
                                 <Video className="w-4 h-4" />
                                 <span>Join Now</span>
                             </button>
@@ -476,24 +394,15 @@ const Dashboard: React.FC<DashboardProps> = ({
                         <h3 className="font-bold">Live Integration Simulation</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <button 
-                            onClick={() => onSimulateMessage('whatsapp', 'Sarah Van Der Merwe', 'Acquisition pack review complete. Secure link uploaded.')}
-                            className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 shadow-sm"
-                        >
+                        <button onClick={() => onSimulateMessage('whatsapp', 'Sarah Van Der Merwe', 'Acquisition pack review complete. Secure link uploaded.')} className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-3 rounded hover:bg-green-700 shadow-sm">
                             <MessageSquare className="w-4 h-4" />
                             <span>WhatsApp Simulation</span>
                         </button>
-                        <button 
-                            onClick={() => onSimulateMessage('email', 'Sipho Nkosi', 'RE: SENS draft is approved. Proceed to distribution.')}
-                            className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded hover:bg-blue-700 shadow-sm"
-                        >
+                        <button onClick={() => onSimulateMessage('email', 'Sipho Nkosi', 'RE: SENS draft is approved. Proceed to distribution.')} className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-3 rounded hover:bg-blue-700 shadow-sm">
                             <Mail className="w-4 h-4" />
                             <span>Email Simulation</span>
                         </button>
-                        <button 
-                            onClick={onSendReminders}
-                            className="flex items-center justify-center space-x-2 bg-slate-800 text-white px-4 py-3 rounded hover:bg-slate-900 shadow-sm"
-                        >
+                        <button onClick={onSendReminders} className="flex items-center justify-center space-x-2 bg-slate-800 text-white px-4 py-3 rounded hover:bg-slate-900 shadow-sm">
                             <Send className="w-4 h-4" />
                             <span>Global Reminders</span>
                         </button>
@@ -501,7 +410,6 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </div>
             )}
         </div>
-
       </div>
     </div>
   );

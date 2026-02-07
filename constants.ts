@@ -1,4 +1,4 @@
-import { User, UserRole, Meeting, MeetingStatus, ActionStatus, VoteType, RepositoryDoc } from './types';
+import { User, UserRole, Meeting, MeetingStatus, ActionStatus, VoteType, RepositoryDoc } from './types.ts';
 
 export const MOCK_USERS: User[] = [
   { 
