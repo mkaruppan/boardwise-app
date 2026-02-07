@@ -509,7 +509,7 @@ const App: React.FC = () => {
             return { ...u, terminationApprovals: updatedTermApprovals, status: newStatus };
         }
         return u;
-      }));
+    }));
   };
 
   if (view === 'ONBOARDING') {

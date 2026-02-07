@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AgendaItem } from "../types.ts";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 const FAST_MODEL = 'gemini-2.5-flash-latest'; 
 const PRO_MODEL = 'gemini-2.5-flash-latest'; 
